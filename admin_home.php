@@ -1,13 +1,25 @@
 <?php
 session_start();
-
+include "db_conn.php";
 if (isset($_SESSION['id']) && isset($_SESSION['user_name'])) {
-    include "db_conn.php";
-    // Call the stored procedure
-    $result = mysqli_query($conn, "CALL profile_manager.getAll()");
-    if (!$result) {
-        die("Query failed: " . mysqli_error($conn));
+    // Check if a search query is submitted
+    if (isset($_GET['search'])) {
+        $search = mysqli_real_escape_string($conn, $_GET['search']);
+        $query = "CALL profile_manager.search('$search')";
+        $result = mysqli_query($conn, $query);
+
+        if (!$result) {
+            die("Query failed: " . mysqli_error($conn));
+        }
+    } else {
+        // If no search query, fetch all records
+        $result = mysqli_query($conn, "CALL profile_manager.getAll()");
+
+        if (!$result) {
+            die("Query failed: " . mysqli_error($conn));
+        }
     }
+
     // Fetch column names from the result set
     $columns = [];
     while ($fieldInfo = mysqli_fetch_field($result)) {
@@ -23,7 +35,7 @@ if (isset($_SESSION['id']) && isset($_SESSION['user_name'])) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ADMIN</title>
+    <title>ADMIN HOME</title>
     <style>
         table {
             width: 80%;
@@ -39,10 +51,46 @@ if (isset($_SESSION['id']) && isset($_SESSION['user_name'])) {
             text-align: left;
         }
     </style>
+     </style>
+     <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+     <script>
+    $(document).ready(function () {
+        // Function to perform search
+        $("#search-input").on("keyup", function () {
+            var value = $(this).val().toLowerCase();
+            $(".search tr").filter(function (index) {
+                // Exclude the first row and only filter subsequent rows
+                return index !== 0;
+            }).each(function () {
+                // Check if the search term is found in any column
+                var found = false;
+                $(this).children('td').each(function () {
+                    if ($(this).text().toLowerCase().indexOf(value) > -1) {
+                        found = true;
+                        return false; // exit the loop if found
+                    }
+                });
+                $(this).toggle(found);
+            });
+        });
+    });
+</script>
+
+
 </head>
 <body>
     <h1>ADMIN</h1>
     <h1>Hello, <?php echo $_SESSION['name']; ?></h1>
+    <div class="container">
+        <div class="content">
+    <form>
+            <div class="task-content">
+                <h5>SEARCH</h5>
+                <input type="text" id="search-input" class="search"  placeholder="Search">
+        
+            </div>
+    </form>
+         <div class="search">
     <table>
         <thead>
             <tr>
@@ -92,5 +140,7 @@ echo "</td>";
         <a href="ViewUsers.php">View Users</a> <br>
         <a href="logout.php">Logout</a> <br>
     </nav>
+    
+    
 </body>
 </html>
