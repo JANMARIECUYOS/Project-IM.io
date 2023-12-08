@@ -1,0 +1,9 @@
+{
+    "name": "test/file",
+    "description": "test file",
+    "type": "project",
+    "require": {
+        "phpmailer/phpmailer": "^6.9"
+    },
+    "license": "MIT"
+}
